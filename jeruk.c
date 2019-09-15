@@ -42,10 +42,58 @@ void add_history (char * unused) {};
 #include <editline/history.h>
 #endif
 
-long eval(mpc_ast_t* t);
-long eval_op(long x, char* op, long y);
-int min(int x, int y);
-int max(int x, int y);
+enum { JVAL_NUM, JVAL_ERR };
+enum { JERR_DIV_ZERO, JERR_BAD_OP, JERR_BAD_NUM };
+
+typedef struct {
+    int type;
+    long num;
+    int err;
+} jval;
+
+jval eval(mpc_ast_t* t);
+jval eval_op(jval x, char* op, jval y);
+jval min(jval x, jval y);
+jval max(jval x, jval y);
+
+
+jval jval_num(long x){
+    jval v;
+    v.type = JVAL_NUM;
+    v.num = x;
+    return v;
+}
+
+jval jval_err(int x){
+    jval v;
+    v.type = JVAL_ERR;
+    v.err = x;
+    return v;
+}
+
+void jval_print(jval v){
+    switch(v.type){
+        case JVAL_NUM: 
+            printf("%li", v.num); 
+            break;
+        case JVAL_ERR:
+            switch(v.err){
+                case JERR_DIV_ZERO:
+                    printf("Error: Division by zero!");
+                    break;
+                case JERR_BAD_OP:
+                    printf("Error: Invalid operator!");
+                    break;
+                case JERR_BAD_NUM:
+                    printf("Error: Invalid Number!");
+                    break;
+            }
+            break;
+    }
+}
+
+void jval_println(jval v){ jval_print(v); putchar('\n'); }
+
 
 int main(int argc, char ** argv){
     mpc_parser_t* Number = mpc_new("number");
@@ -77,9 +125,8 @@ int main(int argc, char ** argv){
 
         mpc_result_t r;
         if (mpc_parse("<stdin>", input, Jeruk, &r)){
-            mpc_ast_print(r.output);
-            long result = eval(r.output);
-            printf("%li\n", result);
+            jval result = eval(r.output);
+            jval_println(result);
             mpc_ast_delete(r.output);
         } else {
             mpc_err_print(r.error);
@@ -95,9 +142,11 @@ int main(int argc, char ** argv){
 }
 
 
-long eval(mpc_ast_t* t){
+jval eval(mpc_ast_t* t){
     if (strstr(t->tag, "number")){
-        return atoi(t->contents);
+        errno = 0;
+        long x = strtol(t->contents, NULL, 10);
+        return errno != ERANGE ? jval_num(x) : jval_err(JERR_BAD_NUM);
     }
 
     /* The operator is always second child. */
@@ -106,11 +155,17 @@ long eval(mpc_ast_t* t){
 
     /* handle when operator is negative, and expression is only one number */
     if (t->children_num == 4){
-        if (strcmp(op, "-") == 0) return -(atoi(t->children[2]->contents));
+        if (strcmp(op, "-") == 0) {
+            errno = 0;
+            long y = strtol(t->children[2]->contents, NULL, 10);
+            return errno != ERANGE
+                ? jval_num(-y) 
+                : jval_err(JERR_BAD_NUM);
+        }
     }
 
     /* we store the third child in `x`  */ 
-    long x = eval(t->children[2]);
+    jval x = eval(t->children[2]);
 
     /* Iterate the remaining children and combining. */
     int i = 3;
@@ -122,17 +177,26 @@ long eval(mpc_ast_t* t){
     return x;
 }
 
-long eval_op(long x, char* op, long y){
-    if (strcmp(op, "+") == 0)  return x + y; 
-    if (strcmp(op, "-") == 0)  return x - y;
-    if (strcmp(op, "*") == 0)  return x * y;
-    if (strcmp(op, "/") == 0)  return x / y;
-    if (strcmp(op, "%") == 0)  return x % y;
-    if (strcmp(op, "^") == 0)  return pow(x,y);
+jval eval_op(jval x, char* op, jval y){
+    if (x.type == JVAL_ERR)  return x; 
+    if (y.type == JVAL_ERR)  return y; 
+
+    if (strcmp(op, "+") == 0)  return jval_num(x.num + y.num); 
+    if (strcmp(op, "-") == 0)  return jval_num(x.num - y.num);
+    if (strcmp(op, "*") == 0)  return jval_num(x.num * y.num);
+    if (strcmp(op, "%") == 0)  return jval_num(x.num % y.num);
+    if (strcmp(op, "^") == 0)  return jval_num(pow(x.num,y.num));
     if (strstr(op, "min"))  return min(x, y);
-    if (strstr(op, "max"))  return max(x,y);
-    return 0;
+    if (strstr(op, "max"))  return max(x, y);
+
+    if (strcmp(op, "/") == 0)  {
+        return y.num == 0?
+            jval_err(JERR_DIV_ZERO)
+            : jval_num(x.num / y.num);
+    };
+
+    return jval_err(JERR_BAD_OP);
 }
 
-int min(int x, int y) {return x < y ? x : y;}
-int max(int x, int y) {return x > y ? x : y;}
+jval min(jval x, jval y) {return x.num < y.num ? x : y;}
+jval max(jval x, jval y) {return x.num > y.num ? x : y;}
