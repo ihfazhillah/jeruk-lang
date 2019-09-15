@@ -77,6 +77,7 @@ int main(int argc, char ** argv){
 
         mpc_result_t r;
         if (mpc_parse("<stdin>", input, Jeruk, &r)){
+            mpc_ast_print(r.output);
             long result = eval(r.output);
             printf("%li\n", result);
             mpc_ast_delete(r.output);
@@ -101,6 +102,12 @@ long eval(mpc_ast_t* t){
 
     /* The operator is always second child. */
     char* op = t->children[1]->contents;
+
+
+    /* handle when operator is negative, and expression is only one number */
+    if (t->children_num == 4){
+        if (strcmp(op, "-") == 0) return -(atoi(t->children[2]->contents));
+    }
 
     /* we store the third child in `x`  */ 
     long x = eval(t->children[2]);
