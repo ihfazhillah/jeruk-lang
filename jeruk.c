@@ -1,9 +1,9 @@
 /*
  * =====================================================================================
  *
- *       Filename:  repl.c
+ *       Filename:  jeruk.c
  *
- *    Description:  Repl for lisp
+ *    Description:  Repl for jeruk lang
  *
  *        Version:  1.0
  *        Created:  15/09/19 07:32:05
