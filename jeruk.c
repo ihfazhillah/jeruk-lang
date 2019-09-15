@@ -56,7 +56,7 @@ int main(int argc, char ** argv){
     mpca_lang(MPCA_LANG_DEFAULT,
         "                                                         \
         number : /-?[0-9]+/ ;                                     \
-        operator : '+' | '-' | '*' | '/';                         \
+        operator : '+' | '-' | '*' | '/' | '%' | '^';             \
         expression: <number> | '(' <operator> <expression>+ ')' ; \
         jeruk: /^/ <operator> <expression>+ /$/ ;                 \
         ",
@@ -104,7 +104,7 @@ long eval(mpc_ast_t* t){
 
     /* Iterate the remaining children and combining. */
     int i = 3;
-    while (strstr(t->children[i]->tag, "expr")){
+    while (strstr(t->children[i]->tag, "expression")){
         x = eval_op(x, op, eval(t->children[i]));
         i++;
     }
@@ -117,5 +117,7 @@ long eval_op(long x, char* op, long y){
     if (strcmp(op, "-") == 0)  return x - y;
     if (strcmp(op, "*") == 0)  return x * y;
     if (strcmp(op, "/") == 0)  return x / y;
+    if (strcmp(op, "%") == 0)  return x % y;
+    if (strcmp(op, "^") == 0)  return pow(x,y);
     return 0;
 }
