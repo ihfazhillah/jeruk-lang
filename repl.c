@@ -17,6 +17,7 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include "mpc.h"
 
 #ifdef _WIN32
 #include <string.h>
@@ -44,6 +45,23 @@ void add_history (char * unused) {};
 
 
 int main(int argc, char ** argv){
+    mpc_parser_t* Number = mpc_new("number");
+    mpc_parser_t* Expression = mpc_new("expression");
+    mpc_parser_t* Operator = mpc_new("operator");
+    mpc_parser_t* Jeruk = mpc_new("jeruk"); // :D jeruk language
+
+
+    mpca_lang(MPCA_LANG_DEFAULT,
+        "                                                         \
+        number : /-?[0-9]+/ ;                                     \
+        operator : '+' | '-' | '*' | '/';                         \
+        expression: <number> | '(' <operator> <expression>+ ')' ; \
+        jeruk: /^/ <operator> <expression>+ /$/ ;                 \
+        ",
+        Number, Operator, Expression, Jeruk
+    );
+
+
     puts("Lispy Version 0.0.0.0.0.0.1 :D");
     puts("Press CTRL+C to Exit.\n");
 
@@ -56,6 +74,8 @@ int main(int argc, char ** argv){
 
         free(input);
     }
+
+    mpc_cleanup(4, Number, Operator, Expression, Jeruk);
 
     return 0;
 }
