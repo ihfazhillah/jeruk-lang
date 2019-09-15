@@ -44,6 +44,8 @@ void add_history (char * unused) {};
 
 long eval(mpc_ast_t* t);
 long eval_op(long x, char* op, long y);
+int min(int x, int y);
+int max(int x, int y);
 
 int main(int argc, char ** argv){
     mpc_parser_t* Number = mpc_new("number");
@@ -56,7 +58,8 @@ int main(int argc, char ** argv){
     mpca_lang(MPCA_LANG_DEFAULT,
         "                                                         \
         number : /-?[0-9]+/ ;                                     \
-        operator : '+' | '-' | '*' | '/' | '%' | '^';             \
+        operator : '+' | '-' | '*' | '/' | '%' | '^'| \"min\" |   \
+        \"max\";                                                  \
         expression: <number> | '(' <operator> <expression>+ ')' ; \
         jeruk: /^/ <operator> <expression>+ /$/ ;                 \
         ",
@@ -119,5 +122,10 @@ long eval_op(long x, char* op, long y){
     if (strcmp(op, "/") == 0)  return x / y;
     if (strcmp(op, "%") == 0)  return x % y;
     if (strcmp(op, "^") == 0)  return pow(x,y);
+    if (strstr(op, "min"))  return min(x, y);
+    if (strstr(op, "max"))  return max(x,y);
     return 0;
 }
+
+int min(int x, int y) {return x < y ? x : y;}
+int max(int x, int y) {return x > y ? x : y;}
