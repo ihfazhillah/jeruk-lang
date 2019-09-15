@@ -49,10 +49,10 @@ int main(int argc, char ** argv){
 
     while (1){
 
-        char * input = readline("lispy> ");
+        char * input = readline("jeruk> ");
         add_history(input);
 
-        printf("No you're a %s\n", input);
+        printf("Your string is: %s\n", input);
 
         free(input);
     }
