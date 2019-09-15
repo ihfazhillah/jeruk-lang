@@ -51,6 +51,7 @@ int main(int argc, char ** argv){
     mpc_parser_t* Jeruk = mpc_new("jeruk"); // :D jeruk language
 
 
+    // TODO: how is decimal number?
     mpca_lang(MPCA_LANG_DEFAULT,
         "                                                         \
         number : /-?[0-9]+/ ;                                     \
