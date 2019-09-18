@@ -56,10 +56,10 @@ typedef struct jval{
     struct jval** cell;
 } jval;
 
-jval eval(mpc_ast_t* t);
-jval eval_op(jval x, char* op, jval y);
-jval min(jval x, jval y);
-jval max(jval x, jval y);
+/* jval eval(mpc_ast_t* t); */
+/* jval eval_op(jval x, char* op, jval y); */
+/* jval min(jval x, jval y); */
+/* jval max(jval x, jval y); */
 
 
 jval jval_num(long x){
@@ -149,61 +149,61 @@ int main(int argc, char ** argv){
 }
 
 
-jval eval(mpc_ast_t* t){
-    if (strstr(t->tag, "number")){
-        errno = 0;
-        long x = strtol(t->contents, NULL, 10);
-        return errno != ERANGE ? jval_num(x) : jval_err(JERR_BAD_NUM);
-    }
+/* jval eval(mpc_ast_t* t){ */
+/*     if (strstr(t->tag, "number")){ */
+/*         errno = 0; */
+/*         long x = strtol(t->contents, NULL, 10); */
+/*         return errno != ERANGE ? jval_num(x) : jval_err(JERR_BAD_NUM); */
+/*     } */
 
-    /* The operator is always second child. */
-    char* op = t->children[1]->contents;
+/*     /1* The operator is always second child. *1/ */
+/*     char* op = t->children[1]->contents; */
 
 
-    /* handle when operator is negative, and expression is only one number */
-    if (t->children_num == 4){
-        if (strcmp(op, "-") == 0) {
-            errno = 0;
-            long y = strtol(t->children[2]->contents, NULL, 10);
-            return errno != ERANGE
-                ? jval_num(-y) 
-                : jval_err(JERR_BAD_NUM);
-        }
-    }
+/*     /1* handle when operator is negative, and expression is only one number *1/ */
+/*     if (t->children_num == 4){ */
+/*         if (strcmp(op, "-") == 0) { */
+/*             errno = 0; */
+/*             long y = strtol(t->children[2]->contents, NULL, 10); */
+/*             return errno != ERANGE */
+/*                 ? jval_num(-y) */ 
+/*                 : jval_err(JERR_BAD_NUM); */
+/*         } */
+/*     } */
 
-    /* we store the third child in `x`  */ 
-    jval x = eval(t->children[2]);
+/*     /1* we store the third child in `x`  *1/ */ 
+/*     jval x = eval(t->children[2]); */
 
-    /* Iterate the remaining children and combining. */
-    int i = 3;
-    while (strstr(t->children[i]->tag, "expression")){
-        x = eval_op(x, op, eval(t->children[i]));
-        i++;
-    }
+/*     /1* Iterate the remaining children and combining. *1/ */
+/*     int i = 3; */
+/*     while (strstr(t->children[i]->tag, "expression")){ */
+/*         x = eval_op(x, op, eval(t->children[i])); */
+/*         i++; */
+/*     } */
 
-    return x;
-}
+/*     return x; */
+/* } */
 
-jval eval_op(jval x, char* op, jval y){
-    if (x.type == JVAL_ERR)  return x; 
-    if (y.type == JVAL_ERR)  return y; 
+/* jval eval_op(jval x, char* op, jval y){ */
+/*     if (x.type == JVAL_ERR)  return x; */ 
+/*     if (y.type == JVAL_ERR)  return y; */ 
 
-    if (strcmp(op, "+") == 0)  return jval_num(x.num + y.num); 
-    if (strcmp(op, "-") == 0)  return jval_num(x.num - y.num);
-    if (strcmp(op, "*") == 0)  return jval_num(x.num * y.num);
-    if (strcmp(op, "%") == 0)  return jval_num(x.num % y.num);
-    if (strcmp(op, "^") == 0)  return jval_num(pow(x.num,y.num));
-    if (strstr(op, "min"))  return min(x, y);
-    if (strstr(op, "max"))  return max(x, y);
+/*     if (strcmp(op, "+") == 0)  return jval_num(x.num + y.num); */ 
+/*     if (strcmp(op, "-") == 0)  return jval_num(x.num - y.num); */
+/*     if (strcmp(op, "*") == 0)  return jval_num(x.num * y.num); */
+/*     if (strcmp(op, "%") == 0)  return jval_num(x.num % y.num); */
+/*     if (strcmp(op, "^") == 0)  return jval_num(pow(x.num,y.num)); */
+/*     if (strstr(op, "min"))  return min(x, y); */
+/*     if (strstr(op, "max"))  return max(x, y); */
 
-    if (strcmp(op, "/") == 0)  {
-        return y.num == 0?
-            jval_err(JERR_DIV_ZERO)
-            : jval_num(x.num / y.num);
-    };
+/*     if (strcmp(op, "/") == 0)  { */
+/*         return y.num == 0? */
+/*             jval_err(JERR_DIV_ZERO) */
+/*             : jval_num(x.num / y.num); */
+/*     }; */
 
-    return jval_err(JERR_BAD_OP);
-}
+/*     return jval_err(JERR_BAD_OP); */
+/* } */
 
-jval min(jval x, jval y) {return x.num < y.num ? x : y;}
-jval max(jval x, jval y) {return x.num > y.num ? x : y;}
+/* jval min(jval x, jval y) {return x.num < y.num ? x : y;} */
+/* jval max(jval x, jval y) {return x.num > y.num ? x : y;} */
