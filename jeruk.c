@@ -62,18 +62,62 @@ typedef struct jval{
 /* jval max(jval x, jval y); */
 
 
-jval jval_num(long x){
-    jval v;
-    v.type = JVAL_NUM;
-    v.num = x;
+jval* jval_num(long x){
+    jval* v = malloc(sizeof(jval));
+    v->type = JVAL_NUM;
+    v->num = x;
     return v;
 }
 
-jval jval_err(int x){
-    jval v;
-    v.type = JVAL_ERR;
-    v.err = x;
+jval* jval_err(char* m){
+    jval* v = malloc(sizeof(jval));
+    v->type = JVAL_ERR;
+    // alokasi memory untuk error string
+    v->err = malloc(strlen(m) + 1);
+    // copy string m to v->err
+    strcpy(v->err, m);
     return v;
+}
+
+jval* jval_sym(char* s){
+    jval* v = malloc(sizeof(jval));
+    v->type = JVAL_SYM;
+    // alokasi memory untuk symbol string
+    v->sym = malloc(strlen(s) + 1);
+    // copy
+    strcpy(v->sym, s);
+    return v;
+}
+
+/* init sexpr with zero count and NULL pointer */
+jval* lval_sexpr(void){
+    jval* v = malloc(sizeof(jval));
+    v->type = JVAL_SEXPR;
+    v->count = 0;
+    v->cell = NULL;
+    return v;
+}
+
+/* jval deconstructor */
+void jval_del(jval* v){
+    switch(v->type){
+        case JVAL_NUM: break;
+
+        /* For sym and err, just free it */
+        case JVAL_ERR: free(v->err); break;
+        case JVAL_SYM: free(v->sym); break;
+
+        /* For sexpr, then delete all element inside first, then free the container pointer */
+        case JVAL_SEXPR:
+            for(int i=0; i < v->count; i++){
+                jval_del(v->cell[i]);
+            }
+            free(v->cell);
+            break;
+    }
+
+    /* Dont forget to free the v */
+    free(v);
 }
 
 void jval_print(jval v){
