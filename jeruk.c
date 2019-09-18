@@ -157,28 +157,31 @@ jval* jval_add(jval* v, jval* x){
     return v;
 }
 
-void jval_print(jval v){
-    switch(v.type){
-        case JVAL_NUM: 
-            printf("%li", v.num); 
-            break;
-        case JVAL_ERR:
-            switch(v.err){
-                case JERR_DIV_ZERO:
-                    printf("Error: Division by zero!");
-                    break;
-                case JERR_BAD_OP:
-                    printf("Error: Invalid operator!");
-                    break;
-                case JERR_BAD_NUM:
-                    printf("Error: Invalid Number!");
-                    break;
-            }
-            break;
+void jval_expr_print(jval* v, char open, char close){
+    putchar(open);
+    for (int i = 0; i < v->count; i++){
+        /*  Print value contained within */
+        jval_print(v->cell[i]);
+
+        /*  DOn't print trailing space if last element */
+        if (i != (v->count-1)){
+            putchar(' ');
+        }
+    }
+    putchar(close);
+}
+
+
+void jval_print(jval* v){
+    switch(v->type){
+        case JVAL_NUM: printf("%li", v->num); break;
+        case JVAL_ERR: printf("Error: %s", v->err); break;
+        case JVAL_SYM: printf("%s", v->sym); break;
+        case JVAL_SEXPR: jval_expr_print(v, '(', ')'); break;
     }
 }
 
-void jval_println(jval v){ jval_print(v); putchar('\n'); }
+void jval_println(jval* v){ jval_print(v); putchar('\n'); }
 
 
 int main(int argc, char ** argv){
@@ -196,8 +199,8 @@ int main(int argc, char ** argv){
         symbol : '+' | '-' | '*' | '/' | '%' | '^'| \"min\" |     \
         \"max\";                                                  \
         expression: <number> | <symbol> | <sexpr> ;               \
-        sexpr: '(' <expression> ')';                              \ 
-        jeruk: /^/ <operator> <expression>+ /$/ ;                 \
+        sexpr: '(' <expression>* ')';                              \
+        jeruk: /^/  <expression>* /$/ ;                 \
         ",
         Number, Symbol, Expression, Jeruk, Sexpr
     );
@@ -213,8 +216,11 @@ int main(int argc, char ** argv){
 
         mpc_result_t r;
         if (mpc_parse("<stdin>", input, Jeruk, &r)){
-            jval result = eval(r.output);
-            jval_println(result);
+            /* jval result = eval(r.output); */
+            jval* x = jval_read(r.output);
+            jval_println(x);
+            jval_del(x);
+
             mpc_ast_delete(r.output);
         } else {
             mpc_err_print(r.error);
