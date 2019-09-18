@@ -98,7 +98,8 @@ void jval_println(jval v){ jval_print(v); putchar('\n'); }
 int main(int argc, char ** argv){
     mpc_parser_t* Number = mpc_new("number");
     mpc_parser_t* Expression = mpc_new("expression");
-    mpc_parser_t* Operator = mpc_new("operator");
+    mpc_parser_t* Sexpr = mpc_new("sexpr");
+    mpc_parser_t* Symbol = mpc_new("symbol");
     mpc_parser_t* Jeruk = mpc_new("jeruk"); // :D jeruk language
 
 
@@ -106,12 +107,13 @@ int main(int argc, char ** argv){
     mpca_lang(MPCA_LANG_DEFAULT,
         "                                                         \
         number : /-?[0-9]+/ ;                                     \
-        operator : '+' | '-' | '*' | '/' | '%' | '^'| \"min\" |   \
+        symbol : '+' | '-' | '*' | '/' | '%' | '^'| \"min\" |     \
         \"max\";                                                  \
-        expression: <number> | '(' <operator> <expression>+ ')' ; \
+        expression: <number> | <symbol> | <sexpr> ;               \
+        sexpr: '(' <expression> ')';                              \ 
         jeruk: /^/ <operator> <expression>+ /$/ ;                 \
         ",
-        Number, Operator, Expression, Jeruk
+        Number, Symbol, Expression, Jeruk, Sexpr
     );
 
 
@@ -136,7 +138,7 @@ int main(int argc, char ** argv){
         free(input);
     }
 
-    mpc_cleanup(4, Number, Operator, Expression, Jeruk);
+    mpc_cleanup(5, Number, Symbol, Sexpr, Expression, Jeruk);
 
     return 0;
 }
