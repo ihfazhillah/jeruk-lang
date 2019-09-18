@@ -90,7 +90,7 @@ jval* jval_sym(char* s){
 }
 
 /* init sexpr with zero count and NULL pointer */
-jval* lval_sexpr(void){
+jval* jval_sexpr(void){
     jval* v = malloc(sizeof(jval));
     v->type = JVAL_SEXPR;
     v->count = 0;
@@ -118,6 +118,43 @@ void jval_del(jval* v){
 
     /* Dont forget to free the v */
     free(v);
+}
+
+jval* jval_read_num(mpc_ast_t* t){
+    errno = 0;
+    long x = strtol(t->contents, NULL, 10);
+    return errno != ERANGE ?
+        jval_num(x): jval_err("invalid number");
+}
+
+jval* jval_add(jval* x, jval* y);
+
+jval* jval_read(mpc_ast_t* t){
+    /*  If Symbol or Number return conversion to that type */
+    if (strstr(t->tag, "number")) return jval_read_num(t);
+    if (strstr(t->tag, "symbol")) return jval_sym(t->contents);
+
+    /*  if root (>) or sexpr then create empty list */
+    jval* x = NULL;
+    if (strcmp(t->tag, ">") == 0) x = jval_sexpr();
+    if (strstr(t->tag, "sexpr")) x = jval_sexpr();
+
+    /*  Fill this list with any valid expression contained within */
+    for (int i = 0; i < t->children_num; i++){
+        if (strcmp(t->children[i]->contents, "(") == 0) continue;
+        if (strcmp(t->children[i]->contents, ")") == 0) continue;
+        if (strcmp(t->children[i]->tag, "regex") == 0) continue;
+        x = jval_add(x, jval_read(t->children[i]));
+    }
+
+    return x;
+}
+
+jval* jval_add(jval* v, jval* x){
+    v->count++;
+    v->cell = realloc(v->cell, sizeof(jval*) * v->count);
+    v->cell[v->count - 1] = x;
+    return v;
 }
 
 void jval_print(jval v){
