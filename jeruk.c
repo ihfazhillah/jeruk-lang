@@ -42,13 +42,18 @@ void add_history (char * unused) {};
 #include <editline/history.h>
 #endif
 
-enum { JVAL_NUM, JVAL_ERR };
-enum { JERR_DIV_ZERO, JERR_BAD_OP, JERR_BAD_NUM };
+enum { JVAL_NUM, JVAL_ERR, JVAL_SYM, JVAL_SEXPR };
 
-typedef struct {
+typedef struct jval{
     int type;
     long num;
-    int err;
+
+    char* err;
+    char* sym;
+
+    /* Trick to do variable length struct */
+    int count; // keep track count of length
+    struct jval** cell;
 } jval;
 
 jval eval(mpc_ast_t* t);
