@@ -270,6 +270,13 @@ jval* builtin_op(jval* a, char* op){
             }
             x->num /= y->num;
         }
+        if (strcmp(op, "%") == 0) {x->num %= y->num;}
+        if (strstr(op, "min")) {
+            x->num = x->num > y->num ? y->num: x->num;
+        }
+        if (strstr(op, "max")) {
+            x->num = x->num > y->num ? x->num: y->num;
+        }
 
         jval_del(y);
 
