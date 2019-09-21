@@ -290,6 +290,7 @@ int main(int argc, char ** argv){
     mpc_parser_t* Number = mpc_new("number");
     mpc_parser_t* Expression = mpc_new("expression");
     mpc_parser_t* Sexpr = mpc_new("sexpr");
+    mpc_parser_t* Qexpr = mpc_new("qexpr");
     mpc_parser_t* Symbol = mpc_new("symbol");
     mpc_parser_t* Jeruk = mpc_new("jeruk"); // :D jeruk language
 
@@ -301,10 +302,11 @@ int main(int argc, char ** argv){
         symbol : '+' | '-' | '*' | '/' | '%' | '^'| \"min\" |     \
         \"max\";                                                  \
         expression: <number> | <symbol> | <sexpr> ;               \
-        sexpr: '(' <expression>* ')';                              \
-        jeruk: /^/  <expression>* /$/ ;                 \
+        sexpr: '(' <expression>* ')';                             \
+        qexpr: '{' <expression>* '}';                             \
+        jeruk: /^/  <expression>* /$/ ;                           \
         ",
-        Number, Symbol, Expression, Jeruk, Sexpr
+        Number, Symbol, Expression, Jeruk, Sexpr, Qexpr
     );
 
 
@@ -332,7 +334,7 @@ int main(int argc, char ** argv){
         free(input);
     }
 
-    mpc_cleanup(5, Number, Symbol, Sexpr, Expression, Jeruk);
+    mpc_cleanup(6, Number, Symbol, Sexpr, Expression, Jeruk, Qexpr);
 
     return 0;
 }
