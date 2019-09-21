@@ -128,6 +128,10 @@ jval* jval_read_num(mpc_ast_t* t){
 }
 
 jval* jval_add(jval* x, jval* y);
+jval* jval_eval(jval* v);
+jval* jval_take(jval* v, int i);
+jval* jval_pop(jval* v, int i);
+jval* builtin_op(jval* a, char* op);
 
 jval* jval_read(mpc_ast_t* t){
     /*  If Symbol or Number return conversion to that type */
@@ -184,6 +188,97 @@ void jval_print(jval* v){
 void jval_println(jval* v){ jval_print(v); putchar('\n'); }
 
 
+jval* jval_eval_sexpr(jval* v){
+    /*  evaluate children */
+    for (int i = 0; i < v->count; i++){
+        v->cell[i] = jval_eval(v->cell[i]);
+    }
+
+    /*  Error checking */
+    for (int i = 0; i < v->count; i++){
+        if (v->cell[i]->type == JVAL_ERR) return jval_take(v, i);
+    }
+
+    /* Empty expresion */
+    if (v->count == 0) return v;
+
+    /* Single expression */
+    if (v->count == 1) return jval_take(v, 0);
+
+    /* Ensure first element is symbol */
+    jval* f = jval_pop(v, 0);
+    if (f->type != JVAL_SYM){
+        jval_del(f); jval_del(v);
+        return jval_err("S-expression does not start with symbol!");
+    }
+
+    /* Call builtin with operator */
+    jval* result = builtin_op(v, f->sym);
+    jval_del(f);
+    return result;
+}
+
+jval* jval_eval(jval* v){
+    /* Evaluate sexpressions */
+    if (v->type == JVAL_SEXPR) return jval_eval_sexpr(v);
+    return v;
+}
+
+jval* jval_pop(jval* v, int i){
+    jval* x = v->cell[i];
+
+    /* shift memory after the item at "i over the top" */
+    memmove(&v->cell[i], &v->cell[i+1], sizeof(jval*) * (v->count-i-1));
+    v->count--;
+    v->cell = realloc(v->cell, sizeof(jval*) * v->count);
+    return x;
+}
+
+jval* jval_take(jval* v, int i){
+    jval* x = jval_pop(v, i);
+    jval_del(v);
+    return x;
+}
+
+jval* builtin_op(jval* a, char* op){
+    /*  Ensure all arguments are numbers */
+    for (int i = 0; i < a->count; i++){
+        if(a->cell[i]->type != JVAL_NUM){
+            jval_del(a);
+            return jval_err("Cannot operate on non-number!");
+        }
+    }
+
+    jval* x = jval_pop(a, 0);
+
+    /* If no arguments and sub then perform unary negation */
+    if((strcmp(op, "-") == 0) && a->count == 0){
+        x->num = -x->num;
+    }
+
+    /* While thre are still elements remaining */
+    while (a->count > 0){
+        jval* y = jval_pop(a, 0);
+
+        if (strcmp(op, "+") == 0) {x->num += y->num;}
+        if (strcmp(op, "-") == 0) {x->num -= y->num;}
+        if (strcmp(op, "*") == 0) {x->num *= y->num;}
+        if (strcmp(op, "/") == 0) {
+            if (y->num == 0){
+                jval_del(x); jval_del(y);
+                x = jval_err("Division By Zero!"); break;
+            }
+            x->num /= y->num;
+        }
+
+        jval_del(y);
+
+    }
+    jval_del(a); return x;
+}
+
+
+
 int main(int argc, char ** argv){
     mpc_parser_t* Number = mpc_new("number");
     mpc_parser_t* Expression = mpc_new("expression");
@@ -217,7 +312,7 @@ int main(int argc, char ** argv){
         mpc_result_t r;
         if (mpc_parse("<stdin>", input, Jeruk, &r)){
             /* jval result = eval(r.output); */
-            jval* x = jval_read(r.output);
+            jval* x = jval_eval(jval_read(r.output));
             jval_println(x);
             jval_del(x);
 
